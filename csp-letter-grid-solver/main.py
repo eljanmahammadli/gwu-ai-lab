@@ -1,5 +1,5 @@
 from typing import List, Tuple
-
+import heapq
 
 
 def adjacent_letters_constraint(x: str, y: str) -> bool:
@@ -20,12 +20,25 @@ def adjacent_letters_constraint(x: str, y: str) -> bool:
     return (x, y) in adj_letters
 
 
+def get_adjacent(letter):
+    """Returns adjacent(s) of the letter in a list"""
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXY'
+    if letter == 'A':
+        return [alphabet[1]]
+    elif letter == 'Y':
+        return [alphabet[-2]]
+    else:
+        idx = alphabet.index(letter)
+        return [alphabet[idx-1], alphabet[idx+1]]
+
+  
 def get_unassigned_variables() -> List[Tuple[int, int]]:
     """
     Returns a list of unassigned variables, sorted by the number of remaining values in their domain.
     """
     unassigned_vars = [v for v in variables if v not in assigned_vars]
-    return sorted(unassigned_vars, key=lambda v: len(get_domain(v)))
+    return sorted(unassigned_vars, key=lambda v: len([n for n in get_neighbors(v) if n not in assigned_vars]))
+  
 
 def get_domain(variable: Tuple[int, int]) -> List[str]:
     """
@@ -35,10 +48,9 @@ def get_domain(variable: Tuple[int, int]) -> List[str]:
     if variable in grid:
         return [grid[variable]]
     else:
-        domain = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        for neighbor in get_neighbors(variable):
-            if neighbor in assigned_vars:
-                domain.discard(grid[neighbor])
+        domain = set("ABCDEFGHIJKLMNOPQRSTUVWXY")
+        for var in assigned_vars:
+            domain.discard(grid[var])
         return list(domain)
 
 def get_neighbors(variable: Tuple[int, int]) -> List[Tuple[int, int]]:
@@ -56,20 +68,27 @@ def get_neighbors(variable: Tuple[int, int]) -> List[Tuple[int, int]]:
     if col < 5:
         neighbors.append((row, col + 1))
     return neighbors
-
-def is_consistent(variable: Tuple[int, int], value: str) -> bool:
-    """
-    Returns True if the assignment of the given value to the given variable is consistent with the constraints.
-    """
-    if value in [i for i in grid.values()]:
-        return False
-    
-    for neighbor in get_neighbors(variable):
-        if neighbor in assigned_vars:
-            if adjacent_letters_constraint(value, grid[neighbor]):
-                return True
+  
+  
+def is_satisfied(variable: Tuple[int, int]) -> bool:
+    """This function checks if variables has both of its adjacent letters in the neighbourhood"""
+    if variable in assigned_vars:
+        adjacents = get_adjacent(grid[variable])
+        n_letters = [grid[n] if n in assigned_vars else None for n in get_neighbors(variable)]
+        if len(list(set(adjacents) - set(n_letters))) == 0:
+            return True
     return False
-    
+  
+
+def is_complete():
+    if len(assigned_vars) != len(variables):
+        return False
+    for var in variables:
+        if not is_satisfied(var):
+            return False
+    return True
+  
+
 def assign(variable: Tuple[int, int], value: str) -> bool:
     """
     Assigns the given value to the given variable, and performs domain reduction to update the domains of the neighboring variables.
@@ -77,16 +96,7 @@ def assign(variable: Tuple[int, int], value: str) -> bool:
     """
     grid[variable] = value
     assigned_vars.append(variable)
-    for neighbor in get_neighbors(variable):
-        if neighbor not in assigned_vars:
-            domain = get_domain(neighbor)
-            if value in domain:
-                domain.remove(value)
-                if len(domain) == 0:
-                    # Domain wipeout, inconsistent assignment
-                    return False
-                domain_values[neighbor] = domain
-                domain_values[variable] = [value]
+    domain_values[variable] = [value]
     return True
 
   
@@ -95,32 +105,88 @@ def unassign(variable: Tuple[int, int]):
     """
     Unassigns the given variable, and restores the domains of the neighboring variables.
     """
-    domain_values[variable] = get_domain(variable)
-    
     del grid[variable]
     assigned_vars.remove(variable)
-    for neighbor in get_neighbors(variable):
-        if neighbor not in assigned_vars:
-            domain_values[neighbor] = get_domain(neighbor)
+    for v in variables:
+        domain_values[v] = get_domain(v)
+        
+        
+def sort_values(variable):
+    """Prioritizing the values which are adjacent to neighbors"""
+    domain = domain_values[variable]
     
-def forward_check(variable: Tuple[int, int]) -> bool:
+    n_values = [grid[n] for n in get_neighbors(variable) if n in assigned_vars]
+    var_values = []
+    for v in n_values:
+        var_values.extend(get_adjacent(v))
+        
+    for value in var_values:
+        if value in domain:
+            domain.remove(value)
+            domain.insert(0, value)
+
+    return domain
+  
+  
+def ac3():
     """
-    Propagates domain reduction from the given variable to its unassigned neighbors.
-    Returns True if the propagation is successful (all domains are non-empty), and False otherwise.
-    """
-    for neighbor in get_neighbors(variable):
-        if neighbor not in assigned_vars:
-            domain = domain_values[neighbor]
-            for value in list(domain):
-                if not any(is_consistent(neighbor, v) for v in get_domain(neighbor) if v != value):
-                    domain.remove(value)
-            if len(domain) == 0:
-                # Domain wipeout, inconsistent assignment
-                return False
-    return True
+    Enforcing arc consistency using ac3 algorithm
+    Idea is to remove the inconsistent elements from the domain of the tail if there is not 
+      at least one value left in the domain of the head which would satisfy the constraint.
+      
+    Constraint is that each of the adjacent letters of the given cell should be in the neighbors,
+      so that we can traverse from A-Y only via neighbors.
     
+    """
+    heap = []
+    counter = 0
+    for variable in variables:
+        for neighbor in get_neighbors(variable):
+            heap.append((counter, variable, neighbor))
+              
+    heapq.heapify(heap)
+    while heap:
+        arc = heapq.heappop(heap)
+        if remove_inconsistent_values(arc):
+            for variable in variables:
+                new_arc = (counter, variable, arc[1])
+                if new_arc not in heap:
+                    heapq.heappush(heap, new_arc)
+                    
+
+def remove_inconsistent_values(arc):
+    removed = False
+    
+    # if the head is satisfied then no need to remove values from tail
+    if is_satisfied(arc[2]):
+        return removed
+    
+    removed_values = []
+    for value in domain_values[arc[1]]:
+        grid_copy = grid.copy()
+        grid_copy[arc[1]] = value
+        assigned_vars_copy = assigned_vars.copy()
+        assigned_vars_copy.append(arc[1])
+        
+        if arc[2] in assigned_vars_copy:
+            neighbors = get_neighbors(arc[2])
+            n_letters = [grid_copy[n] if n in assigned_vars_copy else None for n in neighbors]
+            unassigned_count = n_letters.count(None)
+            adjacents = get_adjacent(grid_copy[arc[2]])
+            l = list(set(adjacents) - set(n_letters))
+
+            if unassigned_count < len(l):
+                removed_values.append(value)
+                removed = True
+
+    for value in removed_values:
+        domain_values[arc[1]].remove(value)
+
+    return removed
+
 
 def print_grid():
+    """Helper function to print the grid"""
     for variable in variables:
         if variable[1] == 1:
             print("\n")
@@ -128,38 +194,36 @@ def print_grid():
             print(f" {grid[variable]} ", end="")
         else:
             print(" - ", end="")
-
     print("\n")
       
   
 def backtrack() -> bool:
     """
-    Runs the backtracking algorithm to find a solution to the word puzzle.
+    Runs the backtracking algorithm to find a solution to the grid world.
     Returns True if a solution is found, and False otherwise.
     """
-    if len(assigned_vars) == len(variables):
-        # All variables have been assigned, a solution has been found
+    if is_complete():
         return True
     
+    
     var = get_unassigned_variables()[0]
-    domain = get_domain(var)
+    ac3() # enforce the arc consistency
+    domain = sort_values(var)
     for value in domain:
-        if is_consistent(var, value):
-            assign(var, value)
-            if forward_check(var):
-                if backtrack():
-                    return True
-            unassign(var)
-            
+        assign(var, value)
+        result  = backtrack()
+        if result:
+            return True
+        unassign(var)            
     return False
   
   
 def backtracking_search():
     return backtrack()
-
-
+  
 if __name__ == "__main__":
 
+    # get the input grid
     file_path = "input.txt"
     grid = {}
     with open(file_path) as f:
@@ -169,6 +233,7 @@ if __name__ == "__main__":
                     grid[(row_idx+1, col_idx+1)] = char
 
 
+    # initialie variables, assigned variables and domain of them
     variables = [(i, j) for i in range(1, 6) for j in range(1, 6)]
     assigned_vars = [i for i in grid.keys()]
     domain_values = {v: get_domain(v) for v in variables}
@@ -177,6 +242,5 @@ if __name__ == "__main__":
     if backtracking_search():
         print(grid)
         print_grid()
-        print()
     else:
         print("No solution found.")
