@@ -1,25 +1,6 @@
 from typing import List, Tuple
 import heapq
 
-
-def adjacent_letters_constraint(x: str, y: str) -> bool:
-    """
-    Returns True if x and y must be adjacent in the grid, and False otherwise.
-    ABCDEFGHIJKLMNOPQRSTUVWXYZ
-    """
-    adj_letters = [
-        ("A", "B"), ("B", "A"), ("B", "C"), ("C", "B"), ("C", "D"), ("D", "C"),
-        ("D", "E"), ("E", "D"), ("E", "F"), ("F", "E"), ("F", "G"), ("G", "F"),
-        ("G", "H"), ("H", "G"), ("H", "I"), ("I", "H"), ("I", "J"), ("J", "I"),
-        ("J", "K"), ("K", "J"), ("K", "L"), ("L", "K"), ("L", "M"), ("M", "L"),
-        ("M", "N"), ("N", "M"), ("N", "O"), ("O", "N"), ("O", "P"), ("P", "O"),
-        ("P", "Q"), ("Q", "P"), ("Q", "R"), ("R", "Q"), ("R", "S"), ("S", "R"),
-        ("S", "T"), ("T", "S"), ("T", "U"), ("U", "T"), ("U", "V"), ("V", "U"),
-        ("V", "W"), ("W", "V"), ("W", "X"), ("X", "W"), ("X", "Y"), ("Y", "X")
-    ]
-    return (x, y) in adj_letters
-
-
 def get_adjacent(letter):
     """Returns adjacent(s) of the letter in a list"""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXY'
@@ -191,7 +172,13 @@ def print_grid():
         if variable[1] == 1:
             print("\n")
         if variable in grid.keys():
-            print(f" {grid[variable]} ", end="")
+            if variable[1] == 1:
+                print(f"{grid[variable]}  ", end="")
+            elif variable[1] == 5:
+                print(f"  {grid[variable]}", end="")
+            else:
+                print(f"  {grid[variable]}  ", end="")
+                
         else:
             print(" - ", end="")
     print("\n")
@@ -205,10 +192,9 @@ def backtrack() -> bool:
     if is_complete():
         return True
     
-    
-    var = get_unassigned_variables()[0]
+    var = get_unassigned_variables()[0] # MRV
     ac3() # enforce the arc consistency
-    domain = sort_values(var)
+    domain = sort_values(var) # sort the values
     for value in domain:
         assign(var, value)
         result  = backtrack()
