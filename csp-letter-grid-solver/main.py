@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import heapq
 
+
 def get_adjacent(letter):
     """Returns adjacent(s) of the letter in a list"""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXY'
@@ -210,14 +211,7 @@ def backtracking_search():
 if __name__ == "__main__":
 
     # get the input grid
-    file_path = "input.txt"
-    grid = {}
-    with open(file_path) as f:
-        for row_idx, line in enumerate(f):
-            for col_idx, char in enumerate(line.strip().split()):
-                if char != "-":
-                    grid[(row_idx+1, col_idx+1)] = char
-
+    grid = get_grid("input.txt")
 
     # initialie variables, assigned variables and domain of them
     variables = [(i, j) for i in range(1, 6) for j in range(1, 6)]
