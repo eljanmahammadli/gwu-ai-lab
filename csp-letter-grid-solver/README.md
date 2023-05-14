@@ -3,30 +3,12 @@ This is the Python implementation of a CSP (Constraint Satisfaction Problem) sol
 
 
 ## Usage
-To use this program, simply provide a text file containing a 5x5 grid of letters as `input.txt`. The file should contain one row of letters per line, separated by four spaces. For example:
+To use this program, simply provide a text file containing a 5x5 grid of letters as `input.txt`. The file should contain one row of letters per line, separated by four spaces.
 
-```txt
--    -    -    -    Y
-R    A    -    -    -
--    -    -    -    -
--    E    -    -    -
--    -    -    -    K
-```
 Then, run the `main.py` script.
 ```bash
 python3 main.py
 ```
-
-The output will be printed to the console:
-
-```txt
-Q    P    O    X    Y 
-R    A    B    W    V 
-S    F    G    H    I 
-T    E    D    C    J 
-U    N    M    L    K 
-```
-
 
 ## Code explanation
 - `variables` is a list of tuples representing the coordinates of each variable in the 5x5 grid, i.e., [(1,1), (1,2), ..., (5,5)].
