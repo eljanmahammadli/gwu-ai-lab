@@ -1,19 +1,10 @@
 from typing import List, Tuple
 import heapq
 
-
-def get_adjacent(letter):
-    """Returns adjacent(s) of the letter in a list"""
-    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXY'
-    if letter == 'A':
-        return [alphabet[1]]
-    elif letter == 'Y':
-        return [alphabet[-2]]
-    else:
-        idx = alphabet.index(letter)
-        return [alphabet[idx-1], alphabet[idx+1]]
-
+# import helper functions
+from helpers import get_adjacent, get_grid, print_grid
   
+
 def get_unassigned_variables() -> List[Tuple[int, int]]:
     """
     Returns a list of unassigned variables, sorted by the number of remaining values in their domain.
@@ -35,6 +26,7 @@ def get_domain(variable: Tuple[int, int]) -> List[str]:
             domain.discard(grid[var])
         return list(domain)
 
+    
 def get_neighbors(variable: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
     Returns a list of neighbors of the given variable.
@@ -81,7 +73,6 @@ def assign(variable: Tuple[int, int], value: str) -> bool:
     domain_values[variable] = [value]
     return True
 
-  
   
 def unassign(variable: Tuple[int, int]):
     """
@@ -165,24 +156,6 @@ def remove_inconsistent_values(arc):
         domain_values[arc[1]].remove(value)
 
     return removed
-
-
-def print_grid():
-    """Helper function to print the grid"""
-    for variable in variables:
-        if variable[1] == 1:
-            print("\n")
-        if variable in grid.keys():
-            if variable[1] == 1:
-                print(f"{grid[variable]}  ", end="")
-            elif variable[1] == 5:
-                print(f"  {grid[variable]}", end="")
-            else:
-                print(f"  {grid[variable]}  ", end="")
-                
-        else:
-            print(" - ", end="")
-    print("\n")
       
   
 def backtrack() -> bool:
@@ -221,6 +194,6 @@ if __name__ == "__main__":
 
     if backtracking_search():
         print(grid)
-        print_grid()
+        print_grid(variables, grid)
     else:
         print("No solution found.")
