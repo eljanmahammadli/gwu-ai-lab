@@ -1,5 +1,5 @@
 # CSP Snake Solver 
-This is the Python implementation of a CSP (Constraint Satisfaction Problem) solver for a "Snake - A through Y on a 5 x 5 grid" problem. The solver aims to fill a 5x5 grid with letters from A to Y such that each letter ahs its both adjacent letters in the neighbourhood. Basicly it allows us to traverse through A-Y via neighbors.
+This is the Python implementation of a CSP (Constraint Satisfaction Problem) solver for a "Snake - A through Y on a 5 x 5 grid" problem. The solver aims to fill a 5x5 grid with letters from A to Y such that each letter has its both adjacent letters in the neighbourhood. Basicly it allows us to traverse through A-Y via neighbors.
 
 
 ## Usage
@@ -45,7 +45,7 @@ The `get_unassigned_variables` function returns a list of unassigned variables s
 
 The `backtrack` employs a backtracking search, which recursively assigns a value to an unassigned variable, performs arc consistency (AC3) to reduce the domains of the neighboring and other variables, and backtracks if an  assignment violates constraint. If all variables are assigned values without violating the constraints, the solver returns True and prints the grid. If there is no solution, the solver returns False.
 
-`ac3` is responsible for enforcing arc consistency using ac3 algorithm. Idea is to remove the inconsistent elements from the domain of the tail if there is not at least one value left in the domain of the head which would satisfy the constraint. Constraint is that each of the adjacent letters of the given cell should be in the neighbors,so that we can traverse from A-Y only via neighbors. This function also uses `remove_inconsistent_values` function in order to remove insconsistent values from the tail of the arc.
+`ac3` is responsible for enforcing arc consistency using ac3 algorithm. Idea is to remove the inconsistent elements from the domain of the tail if there is not at least one value left in the domain of the head which would satisfy the constraint. Constraint is that each of the adjacent letters of the given cell should be in the neighbors, so that we can traverse from A-Y only via neighbors. This function also uses `remove_inconsistent_values` function in order to remove insconsistent values from the tail of the arc.
 
 `sort_values` function prioritizes the values which are adjacent to neighbors to selected first which makes the implementation much more optimal and effective.
 
